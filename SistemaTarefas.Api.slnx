@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/Itens de Solução/">
+    <File Path=".gitignore" />
+  </Folder>
+  <Project Path="SistemaTarefas.Api/SistemaTarefas.Api.csproj" />
+  <Project Path="SistemaTarefas.Frontend/SistemaTarefas.Frontend.csproj" />
+  <Project Path="SistemaTarefas.Shared/SistemaTarefas.Shared.csproj" />
+</Solution>

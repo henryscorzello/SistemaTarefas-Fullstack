@@ -1,0 +1,15 @@
+[
+  {
+    "Name": "Novo Perfil",
+    "Projects": [
+      {
+        "Path": "SistemaTarefas.Api\\SistemaTarefas.Api.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "SistemaTarefas.Frontend\\SistemaTarefas.Frontend.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]

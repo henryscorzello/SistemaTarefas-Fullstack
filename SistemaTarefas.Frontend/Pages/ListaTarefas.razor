@@ -1,0 +1,123 @@
+﻿@page "/"
+@using SistemaTarefas.Shared
+@inject HttpClient Http
+
+<div class="ios-header">
+    <h1 class="ios-title">Tarefas</h1>
+    <p class="ios-subtitle">@DateTime.Now.ToString("dd 'de' MMMM")</p>
+</div>
+
+<div class="container mt-5" style="max-width: 600px;">
+    <h2 class="mb-4" style="font-weight: 700; color: #1d1d1f;">Minhas Tarefas</h2>
+
+    <div class="ios-card">
+        <input @bind="novaTarefa.Titulo" class="ios-input" placeholder="O que precisa ser feito?" />
+        <button @onclick="AdicionarTarefa" class="ios-button w-100">Adicionar Tarefa</button>
+    </div>
+
+    @if (tarefas == null)
+    {
+        <p>Carregando...</p>
+    }
+    else
+    {
+        @foreach (var tarefa in tarefas)
+        {
+            <div class="ios-card d-flex justify-content-between align-items-center"
+                 @onclick="() => SelecionarTarefa(tarefa)" style="cursor: pointer;">
+                <span>@tarefa.Titulo</span>
+                <span class="badge @(tarefa.Concluida ? "bg-success" : "bg-warning")">
+                    @(tarefa.Concluida ? "Feito" : "Pendente")
+                </span>
+            </div>
+        }
+
+        @if (tarefaSelecionada != null)
+        {
+            <div class="drawer-overlay" @onclick="FecharMenu"></div>
+            <div class="ios-drawer">
+                <div class="drawer-header">Editar Tarefa</div>
+
+                <label>Nome da Tarefa</label>
+                <input @bind="tarefaSelecionada.Titulo" class="ios-input" />
+
+                <div class="mt-4">
+                    <button @onclick="SalvarEdicao" class="ios-button w-100 mb-2">Salvar Alterações</button>
+
+                    <button @onclick="() => { tarefaSelecionada.Concluida = !tarefaSelecionada.Concluida; SalvarEdicao(); }"
+                            class="btn btn-outline-primary w-100 mb-2" style="border-radius: 12px;">
+                        @(tarefaSelecionada.Concluida ? "Marcar como Pendente" : "Marcar como Concluída")
+                    </button>
+
+                    <button @onclick="() => { DeletarTarefa(tarefaSelecionada.Id); FecharMenu(); }"
+                            class="btn btn-outline-danger w-100" style="border-radius: 12px;">
+                        Excluir Tarefa
+                    </button>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private List<Tarefa>? tarefas;
+    private Tarefa novaTarefa = new Tarefa();
+    private async Task DeletarTarefa(int id)
+    {
+        await Http.DeleteAsync($"https://localhost:7257/api/tarefas/{id}");
+        await CarregarTarefas(); // Recarrega a lista após deletar
+    }
+
+    private async Task AtualizarStatus(Tarefa tarefa)
+    {
+        tarefa.Concluida = !tarefa.Concluida; // Inverte o status
+        await Http.PutAsJsonAsync($"https://localhost:7257/api/tarefas/{tarefa.Id}", tarefa);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CarregarTarefas();
+    }
+
+    private async Task CarregarTarefas()
+    {
+        // Lembre-se de usar a porta correta da sua API
+        tarefas = await Http.GetFromJsonAsync<List<Tarefa>>("https://localhost:7257/api/tarefas");
+    }
+
+    private async Task AdicionarTarefa()
+    {
+        if (!string.IsNullOrWhiteSpace(novaTarefa.Titulo))
+        {
+            await Http.PostAsJsonAsync("https://localhost:7257/api/tarefas", novaTarefa);
+            novaTarefa = new Tarefa(); // Limpa o campo
+            await CarregarTarefas();   // Atualiza a lista
+        }
+    }
+
+    private Tarefa? tarefaSelecionada;
+
+    private void SelecionarTarefa(Tarefa tarefa)
+    {
+        // Criamos uma cópia para não alterar a lista principal antes de salvar
+        tarefaSelecionada = new Tarefa
+        {
+            Id = tarefa.Id,
+            Titulo = tarefa.Titulo,
+            Descricao = tarefa.Descricao,
+            Concluida = tarefa.Concluida
+        };
+    }
+
+    private async Task SalvarEdicao()
+    {
+        if (tarefaSelecionada != null)
+        {
+            await Http.PutAsJsonAsync($"https://localhost:7257/api/tarefas/{tarefaSelecionada.Id}", tarefaSelecionada);
+            tarefaSelecionada = null; // Fecha o menu
+            await CarregarTarefas();   // Atualiza a lista
+        }
+    }
+
+    private void FecharMenu() => tarefaSelecionada = null;
+}
